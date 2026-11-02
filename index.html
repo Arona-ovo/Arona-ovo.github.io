@@ -102,6 +102,13 @@
     box-shadow: 0 16px 40px rgba(30,60,110,.16);
     background: rgba(255,255,255,.66);
   }
+  @media (hover: none) {
+    .card:hover {
+      transform: none;
+      box-shadow: 0 8px 28px rgba(30,60,110,.1);
+      background-color: var(--glass);
+    }
+  }
 
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(12px); }
@@ -223,7 +230,7 @@
   <div class="inner wrap">
     <div class="site-logo" id="siteLogo">
       <img src="https://github.com/Arona-ovo.png" alt="Arona"
-           onerror="this.onerror=null;this.parentNode.classList.add('no-img');">
+           onerror="if(this.src.indexOf('avatar.jpg')<0){this.src='assets/avatar.jpg';}else{this.parentNode.classList.add('no-img');}">
       <span class="logo-fallback">A</span>
     </div>
     <h1>Arona 的项目分享库</h1>
@@ -432,6 +439,7 @@
     var returnTimer = null;
     card.addEventListener('pointerdown', function (e) {
       if (e.target.closest('a, button')) return;
+      if (e.pointerType === 'touch') return;  // 触屏不拖拽，避免和上下滑动冲突
       if (returnTimer) { clearTimeout(returnTimer); returnTimer = null; card.style.transition = 'none'; }
       startX = e.clientX; startY = e.clientY;
       lastX = e.clientX; lastY = e.clientY; lastT = performance.now();

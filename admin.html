@@ -335,6 +335,7 @@
     var returnTimer = null;
     card.addEventListener('pointerdown', function (e) {
       if (e.target.closest('a, button')) return;
+      if (e.pointerType === 'touch') return;  // 触屏不拖拽，避免和上下滑动冲突
       if (returnTimer) { clearTimeout(returnTimer); returnTimer = null; card.style.transition = 'none'; }
       startX = e.clientX; startY = e.clientY;
       lastX = e.clientX; lastY = e.clientY; lastT = performance.now();

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arona 的项目分享库</title>
+<meta name="description" content="Arona 的项目分享库 —— AI 学习规划、背单词等工具，点一下就能下载。">
+<style>
+  :root {
+    --text: #1f2430;
+    --text-2: #4b5462;
+    --text-3: #8a93a1;
+    --glass: rgba(255, 255, 255, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.72);
+    --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+    --blue: #2e6bff;
+    --blue-deep: #1f4fd0;
+    --teal: #1d9e75;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: #dbe6f2;
+    color: var(--text);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  a { text-decoration: none; color: inherit; }
+
+  .bg {
+    position: fixed; left: 0; right: 0; top: -80px; bottom: -80px;
+    z-index: -2;
+    background: url('assets/background.jpg') center 65% / cover no-repeat;
+    will-change: transform;
+  }
+
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { position: relative; padding: 80px 0 56px; text-align: center; }
+  .hero .inner { position: relative; z-index: 1; }
+
+  .site-logo {
+    width: 84px; height: 84px; border-radius: 22px;
+    background-color: var(--glass);
+    background-image: var(--noise);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--blue); font-size: 34px; font-weight: 600;
+    box-shadow: 0 8px 24px rgba(30,60,110,.12);
+    margin-bottom: 26px; overflow: hidden; user-select: none;
+    border: 1px solid var(--glass-border);
+  }
+  .site-logo img { width: 100%; height: 100%; object-fit: cover; }
+  .site-logo .logo-fallback { display: none; }
+  .site-logo.no-img img { display: none; }
+  .site-logo.no-img .logo-fallback { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+
+  h1 { font-size: 30px; font-weight: 700; letter-spacing: -.2px; text-shadow: 0 1px 8px rgba(255,255,255,.7); }
+  .subtitle { color: var(--text-2); font-size: 15.5px; margin-top: 12px; text-shadow: 0 1px 8px rgba(255,255,255,.7); }
+  .hero-actions { display: flex; gap: 12px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+  .gh-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 500;
+    background: rgba(31,36,48,.85); color: #fff;
+    transition: transform .15s, box-shadow .15s, background .15s;
+  }
+  .gh-btn:hover { background: rgba(20,24,34,.92); transform: translateY(-1px); box-shadow: 0 8px 20px rgba(20,28,45,.2); }
+  .gh-btn.ghost {
+    background-color: var(--glass); background-image: var(--noise);
+    color: var(--text);
+    border: 1px solid var(--glass-border);
+  }
+  .gh-btn.ghost:hover { background: rgba(255,255,255,.75); box-shadow: none; }
+  .gh-btn svg { display: block; }
+
+  .grid { display: grid; gap: 24px; padding-bottom: 24px; }
+  @media (min-width: 840px) { .grid { grid-template-columns: 1fr 1fr; } }
+
+  .card {
+    background-color: var(--glass);
+    background-image: var(--noise);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    padding: 28px;
+    display: flex; flex-direction: column;
+    box-shadow: 0 8px 28px rgba(30,60,110,.1);
+    transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease;
+    animation: fadeUp .5s ease;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .card.dragging {
+    cursor: grabbing;
+    box-shadow: 0 36px 80px rgba(30,60,110,.34);
+    z-index: 30;
+  }
+  .card:nth-child(2) { animation-delay: .1s; }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(30,60,110,.16);
+    background: rgba(255,255,255,.66);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-head { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+  .mascot {
+    width: 60px; height: 60px; border-radius: 16px; flex: none;
+    background: rgba(255,255,255,.5);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-3); font-size: 24px; font-weight: 600; overflow: hidden;
+    border: 1px solid var(--glass-border);
+  }
+  .mascot img { width: 100%; height: 100%; object-fit: cover; }
+  .mascot .mascot-fallback { display: none; }
+  .mascot.no-img img { display: none; }
+  .mascot.no-img .mascot-fallback { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+
+  .card-title { font-size: 19px; font-weight: 700; letter-spacing: -.2px; }
+  .card-sub { font-size: 13px; color: var(--text-3); margin-top: 3px; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+  .tag {
+    font-size: 12px; padding: 3px 10px; border-radius: 6px;
+    background: rgba(255,255,255,.5); color: var(--text-2); font-weight: 500;
+    border: 1px solid var(--glass-border);
+  }
+
+  .desc { font-size: 14px; color: var(--text-2); margin-bottom: 18px; }
+
+  .features { list-style: none; margin-bottom: 24px; }
+  .features li {
+    font-size: 13.5px; color: var(--text); padding: 8px 0 8px 20px; position: relative;
+    border-bottom: 1px solid rgba(255,255,255,.5);
+  }
+  .features li:last-child { border-bottom: none; }
+  .features li::before {
+    content: ""; position: absolute; left: 4px; top: 16px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--blue);
+  }
+  .card.aw .features li::before { background: var(--teal); }
+
+  .actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 16px; border-radius: 9px; font-size: 14px; font-weight: 500;
+    border: 1px solid transparent; cursor: pointer;
+    transition: transform .12s, background .12s, border-color .12s, box-shadow .12s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn svg { display: block; flex: none; }
+  .btn-primary { background: var(--blue); color: #fff; box-shadow: 0 4px 14px rgba(46,107,255,.3); }
+  .btn-primary:hover { background: var(--blue-deep); }
+  .card.aw .btn-primary { background: var(--teal); box-shadow: 0 4px 14px rgba(29,158,117,.3); }
+  .card.aw .btn-primary:hover { background: #178a66; }
+  .btn-ghost { background: rgba(255,255,255,.5); border-color: var(--glass-border); color: var(--text); }
+  .btn-ghost:hover { background: rgba(255,255,255,.8); border-color: rgba(255,255,255,.9); }
+
+  .size-hint { font-size: 11.5px; color: var(--text-3); margin-top: 18px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .size-hint .dl-badge { height: 20px; }
+
+  footer { text-align: center; padding: 20px 20px 24px; color: var(--text-3); font-size: 13px; }
+  .spacer { height: 50vh; }
+
+  footer a { color: var(--text-2); }
+  footer a:hover { color: var(--blue); }
+  footer .admin-link {
+    display: inline-block; margin-top: 14px; padding: 5px 15px;
+    background-color: var(--glass); background-image: var(--noise);
+    border: 1px solid var(--glass-border);
+    border-radius: 999px; font-size: 12px; color: var(--text-3);
+  }
+  footer .admin-link:hover { color: var(--text-2); background: rgba(255,255,255,.7); }
+
+  @media (max-height: 540px) {
+    .hero { padding: 36px 0 36px; }
+  }
+
+  .ripple-dot, .ripple-ring {
+    position: fixed; border-radius: 50%; pointer-events: none;
+    transform: translate(-50%, -50%); z-index: 9999;
+  }
+  .ripple-dot {
+    width: 16px; height: 16px; background: rgba(46,107,255,.4);
+    animation: rippleDot .45s ease-out forwards;
+  }
+  .ripple-ring {
+    width: 28px; height: 28px; border: 2px solid rgba(46,107,255,.55);
+    animation: rippleRing .7s ease-out forwards;
+  }
+  @keyframes rippleDot {
+    from { opacity: .7; transform: translate(-50%,-50%) scale(1); }
+    to { opacity: 0; transform: translate(-50%,-50%) scale(.4); }
+  }
+  @keyframes rippleRing {
+    from { opacity: .85; transform: translate(-50%,-50%) scale(.3); }
+    to { opacity: 0; transform: translate(-50%,-50%) scale(7); }
+  }
+
+  /* 碧蓝档案风：半透明三角形爆裂 */
+  .tri {
+    position: fixed; width: 16px; height: 16px; pointer-events: none; z-index: 9998;
+    transform: translate(-50%, -50%) rotate(0deg) scale(.25);
+    animation: triBurst .62s cubic-bezier(.2, .7, .3, 1) forwards;
+    filter: drop-shadow(0 1px 2px rgba(30,60,110,.25));
+  }
+  @keyframes triBurst {
+    0%   { opacity: .9; transform: translate(-50%, -50%) rotate(0deg) scale(.25); }
+    100% { opacity: 0;  transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(var(--rot)) scale(var(--sc)); }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<div class="hero">
+  <div class="inner wrap">
+    <div class="site-logo" id="siteLogo">
+      <img src="https://github.com/Arona-ovo.png" alt="Arona"
+           onerror="this.onerror=null;this.parentNode.classList.add('no-img');">
+      <span class="logo-fallback">A</span>
+    </div>
+    <h1>Arona 的项目分享库</h1>
+    <p class="subtitle">这里是我做出来的小工具，点一下就能下载 · 数据均存本地，无需注册</p>
+    <div class="hero-actions">
+      <a class="gh-btn" href="https://github.com/Arona-ovo" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        访问我的 GitHub
+      </a>
+      <a class="gh-btn ghost" href="https://github.com/Arona-ovo?tab=repositories" target="_blank" rel="noopener">浏览全部仓库</a>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <main class="grid">
+
+    <section class="card pw">
+      <div class="card-head">
+        <div class="mascot">
+          <img src="assets/pwstudy-mascot.jpg" alt="PWstudy" onerror="this.onerror=null;this.parentNode.classList.add('no-img');">
+          <span class="mascot-fallback">PW</span>
+        </div>
+        <div>
+          <div class="card-title">PWstudy</div>
+          <div class="card-sub">AI 学习规划 &amp; 专注计时</div>
+        </div>
+      </div>
+      <div class="tags">
+        <span class="tag">Android APK</span>
+        <span class="tag">微信小程序</span>
+        <span class="tag">H5</span>
+        <span class="tag">数据只存本地</span>
+      </div>
+      <p class="desc">输入一个远景目标，AI 帮你拆成每天该做什么；专注计时管当下，真实进度反过来修正后面的日程。</p>
+      <ul class="features">
+        <li>目标到路径：AI 拆出里程碑和每日任务</li>
+        <li>计划是活的：执行结果动态重排日程</li>
+        <li>完全按计划走完时，不打扰</li>
+      </ul>
+      <div class="actions">
+        <a class="btn btn-primary dl-apk" data-repo="AI-Learning-Plan-APP-PWstudy" href="https://github.com/Arona-ovo/AI-Learning-Plan-APP-PWstudy/releases/download/PWstudy/PWstudy-1.4.5.apk" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 2v8"/><path d="M4.5 7L8 10.5 11.5 7"/><path d="M3 12.5h10"/>
+          </svg>
+          下载 APK
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/Arona-ovo/AI-Learning-Plan-APP-PWstudy" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+        <button class="btn btn-ghost" onclick="copyQQ(this,'1127534463')">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 10.5a3 3 0 0 1-2.2 2.9L8 15l-2.8-1.6A3 3 0 0 1 3 10.5V5a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3z"/></svg>
+          QQ 群 1127534463
+        </button>
+      </div>
+      <div class="size-hint">
+        <img class="dl-badge" src="https://img.shields.io/github/downloads/Arona-ovo/AI-Learning-Plan-APP-PWstudy/total?label=%E4%B8%8B%E8%BD%BD&color=2e6bff" alt="总下载次数">
+        <span>安装包 · 37.9 MB · Android</span>
+      </div>
+    </section>
+
+    <section class="card aw">
+      <div class="card-head">
+        <div class="mascot">
+          <img src="assets/icon-1024.jpg" alt="AWword" onerror="this.onerror=null;this.parentNode.classList.add('no-img');">
+          <span class="mascot-fallback">AW</span>
+        </div>
+        <div>
+          <div class="card-title">AWword</div>
+          <div class="card-sub">AI 背单词 &amp; 翻译练习</div>
+        </div>
+      </div>
+      <div class="tags">
+        <span class="tag">Android APK</span>
+        <span class="tag">H5</span>
+        <span class="tag">离线优先</span>
+        <span class="tag">OpenAI 可选接入</span>
+      </div>
+      <p class="desc">离线优先的中英互译练习工具 —— 不联网、不注册、不配 AI，也能完整背完一本书。</p>
+      <ul class="features">
+        <li>i+1 自适应出题：刚好比现在难一点点</li>
+        <li>真的判你写出来的东西，不止选择题</li>
+        <li>启动页表情会随你的学习状态变化</li>
+      </ul>
+      <div class="actions">
+        <a class="btn btn-primary dl-apk" data-repo="Study-word-APP-AWword" href="https://github.com/Arona-ovo/Study-word-APP-AWword/releases/download/AWword-APP/AWword-1.4.5.apk" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 2v8"/><path d="M4.5 7L8 10.5 11.5 7"/><path d="M3 12.5h10"/>
+          </svg>
+          下载 APK
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/Arona-ovo/Study-word-APP-AWword" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+        <button class="btn btn-ghost" onclick="copyQQ(this,'177437072')">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 10.5a3 3 0 0 1-2.2 2.9L8 15l-2.8-1.6A3 3 0 0 1 3 10.5V5a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3z"/></svg>
+          QQ 群 177437072
+        </button>
+      </div>
+      <div class="size-hint">
+        <img class="dl-badge" src="https://img.shields.io/github/downloads/Arona-ovo/Study-word-APP-AWword/total?label=%E4%B8%8B%E8%BD%BD&color=1d9e75" alt="总下载次数">
+        <span>安装包 · 16.5 MB · 另有 .wgt 热更新包 2.5 MB</span>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <p>© 2026 Arona · 托管于 GitHub Pages · 项目源码见 <a href="https://github.com/Arona-ovo?tab=repositories" target="_blank" rel="noopener">GitHub</a></p>
+  <a class="admin-link" href="admin.html">后台 · 查看下载数据</a>
+</footer>
+
+<div class="spacer" aria-hidden="true"></div>
+
+<script>
+  function copyQQ(btn, num) {
+    var text = btn.textContent.trim();
+    function done() {
+      btn.textContent = '已复制群号 ✓';
+      setTimeout(function () { btn.textContent = text; }, 1600);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(num).then(done).catch(function () { legacy(); });
+    } else { legacy(); }
+    function legacy() {
+      var t = document.createElement('textarea');
+      t.value = num; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(t); done();
+    }
+  }
+
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  document.addEventListener('pointerdown', function (e) {
+    var x = e.clientX, y = e.clientY;
+    var dot = document.createElement('span');
+    dot.className = 'ripple-dot';
+    dot.style.left = x + 'px'; dot.style.top = y + 'px';
+    var ring = document.createElement('span');
+    ring.className = 'ripple-ring';
+    ring.style.left = x + 'px'; ring.style.top = y + 'px';
+    document.body.appendChild(dot);
+    document.body.appendChild(ring);
+    setTimeout(function () { dot.remove(); ring.remove(); }, 720);
+
+    // 碧蓝档案风：半透明三角形向外爆裂
+    var colors = ['rgba(46,107,255,.34)', 'rgba(29,158,117,.32)', 'rgba(46,107,255,.22)'];
+    var count = 7;
+    for (var i = 0; i < count; i++) {
+      var tri = document.createElement('div');
+      tri.className = 'tri';
+      var size = 12 + Math.random() * 16;
+      tri.style.left = x + 'px'; tri.style.top = y + 'px';
+      tri.style.width = size + 'px'; tri.style.height = size + 'px';
+      var ang = (Math.PI * 2) * (i / count) + (Math.random() - .5) * .7;
+      var dist = 46 + Math.random() * 80;
+      var tx = Math.cos(ang) * dist, ty = Math.sin(ang) * dist;
+      var rot = (Math.random() * 540 - 270);
+      var sc = (0.7 + Math.random() * 0.9).toFixed(2);
+      tri.style.setProperty('--tx', tx.toFixed(1) + 'px');
+      tri.style.setProperty('--ty', ty.toFixed(1) + 'px');
+      tri.style.setProperty('--rot', rot.toFixed(1) + 'deg');
+      tri.style.setProperty('--sc', sc);
+      var outline = (i % 3 === 0);
+      var col = colors[i % colors.length];
+      var svg = document.createElementNS(SVGNS, 'svg');
+      svg.setAttribute('viewBox', '0 0 20 20');
+      svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%');
+      var poly = document.createElementNS(SVGNS, 'polygon');
+      poly.setAttribute('points', '10,2 18,17 2,17');
+      if (outline) {
+        poly.setAttribute('fill', 'none');
+        poly.setAttribute('stroke', col.replace(/\.\d+\)/, '.6)'));
+        poly.setAttribute('stroke-width', '2');
+        poly.setAttribute('stroke-linejoin', 'round');
+      } else {
+        poly.setAttribute('fill', col);
+      }
+      svg.appendChild(poly);
+      tri.appendChild(svg);
+      document.body.appendChild(tri);
+      setTimeout(function (t) { return function () { t.remove(); }; }(tri), 680);
+    }
+  });
+
+  var bgEl = document.querySelector('.bg');
+  var ticking = false;
+  function updateBg() {
+    var y = window.scrollY || window.pageYOffset || 0;
+    bgEl.style.transform = 'translate3d(0, ' + (y * -0.05) + 'px, 0)';
+    ticking = false;
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { window.requestAnimationFrame(updateBg); ticking = true; }
+  }, { passive: true });
+
+  var cards = document.querySelectorAll('.card');
+  cards.forEach(function (card) {
+    var startX = 0, startY = 0, active = false, moved = false;
+    var lastX = 0, lastY = 0, lastT = 0, vx = 0, vy = 0;
+    var returnTimer = null;
+    card.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('a, button')) return;
+      if (returnTimer) { clearTimeout(returnTimer); returnTimer = null; card.style.transition = 'none'; }
+      startX = e.clientX; startY = e.clientY;
+      lastX = e.clientX; lastY = e.clientY; lastT = performance.now();
+      vx = vy = 0;
+      active = true; moved = false;
+      card.classList.remove('thrown');
+      card.style.transition = 'none';
+      try { card.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    card.addEventListener('pointermove', function (e) {
+      if (!active) return;
+      var dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!moved && Math.abs(dx) + Math.abs(dy) > 5) {
+        moved = true;
+        card.classList.add('dragging');
+      }
+      if (moved) {
+        var now = performance.now(), dt = now - lastT;
+        if (dt > 0) { vx = (e.clientX - lastX) / dt; vy = (e.clientY - lastY) / dt; }
+        lastX = e.clientX; lastY = e.clientY; lastT = now;
+        // 离谱的倾斜 + 放大：拖得越远越夸张
+        var rot = dx * 0.14;
+        var sc = 1 + Math.min(Math.abs(dx) + Math.abs(dy), 160) / 900;
+        card.style.transform = 'translate(' + dx + 'px,' + dy + 'px) rotate(' + rot + 'deg) scale(' + sc.toFixed(3) + ')';
+      }
+    });
+    function release() {
+      if (!active) return;
+      active = false;
+      if (!moved) { card.style.transition = ''; return; }
+      card.classList.remove('dragging');
+      // 停在丢下的位置，约 1 秒后平滑滑回原位（不是闪回）
+      returnTimer = setTimeout(function () {
+        card.style.transition = 'transform .85s cubic-bezier(.34, 1.2, .5, 1)';
+        card.style.transform = 'translate(0,0) rotate(0deg) scale(1)';
+        setTimeout(function () {
+          card.style.transition = '';
+          card.style.transform = '';
+          returnTimer = null;
+        }, 900);
+      }, 1000);
+    }
+    card.addEventListener('pointerup', release);
+    card.addEventListener('pointercancel', release);
+  });
+
+  // 点击「下载 APK」自动拉取最新版本的 apk（取不到则回退到写死的链接）
+  document.querySelectorAll('.dl-apk').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var repo = a.getAttribute('data-repo');
+      var fallback = a.href;
+      fetch('https://api.github.com/repos/Arona-ovo/' + repo + '/releases/latest')
+        .then(function (r) { if (!r.ok) throw new Error('no latest'); return r.json(); })
+        .then(function (rel) {
+          var apk = null, assets = rel.assets || [];
+          for (var i = 0; i < assets.length; i++) {
+            if (/\.apk$/i.test(assets[i].name)) { apk = assets[i].browser_download_url; break; }
+          }
+          window.location.href = apk || fallback;
+        })
+        .catch(function () { window.location.href = fallback; });
+    });
+  });
+</script>
+</body>
+</html>

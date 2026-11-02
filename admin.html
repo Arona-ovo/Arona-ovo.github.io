@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据后台 · Arona 分享库</title>
+<style>
+  :root {
+    --text: #1f2430;
+    --text-2: #4b5462;
+    --text-3: #8a93a1;
+    --glass: rgba(255, 255, 255, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.72);
+    --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+    --blue: #2e6bff;
+    --blue-deep: #1f4fd0;
+    --teal: #1d9e75;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: #dbe6f2;
+    color: var(--text);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  a { text-decoration: none; color: inherit; }
+
+  .bg {
+    position: fixed; left: 0; right: 0; top: -80px; bottom: -80px;
+    z-index: -2;
+    background: url('assets/background.jpg') center 65% / cover no-repeat;
+    will-change: transform;
+  }
+  .bg::after {
+    content: ""; position: absolute; inset: 0;
+    background: rgba(255, 255, 255, 0.42);
+  }
+
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 26px 0 10px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--text); }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--teal); }
+  .back {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 500;
+    background-color: var(--glass); background-image: var(--noise);
+    border: 1px solid var(--glass-border); color: var(--text);
+    transition: background .15s, box-shadow .15s;
+  }
+  .back:hover { background: rgba(255, 255, 255, 0.75); }
+
+  .overview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 18px 0 26px; }
+  .stat {
+    background-color: var(--glass); background-image: var(--noise);
+    border: 1px solid var(--glass-border); border-radius: 16px;
+    padding: 22px; text-align: center;
+    box-shadow: 0 8px 28px rgba(30, 60, 110, 0.1);
+    animation: fadeUp .5s ease;
+    user-select: none; -webkit-user-select: none;
+  }
+  .stat .num { font-size: 30px; font-weight: 700; color: var(--blue); line-height: 1.1; }
+  .stat.teal .num { color: var(--teal); }
+  .stat .label { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+  @media (max-width: 640px) { .overview { grid-template-columns: 1fr; } }
+
+  .project {
+    background-color: var(--glass); background-image: var(--noise);
+    border: 1px solid var(--glass-border); border-radius: 18px;
+    margin-bottom: 20px; overflow: hidden;
+    box-shadow: 0 8px 28px rgba(30, 60, 110, 0.1);
+    animation: fadeUp .5s ease;
+    user-select: none; -webkit-user-select: none;
+  }
+  .project-head { padding: 22px 26px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .project-head h2 { font-size: 18px; font-weight: 700; color: var(--text); }
+  .project-head .meta { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+  .project-head .total { font-size: 13px; color: var(--blue); font-weight: 600; }
+  .project.aw .project-head .total { color: var(--teal); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; padding: 11px 26px; font-size: 12px; color: var(--text-3);
+    border-top: 1px solid var(--glass-border); border-bottom: 1px solid var(--glass-border); font-weight: 500;
+  }
+  tbody td { padding: 12px 26px; border-bottom: 1px solid rgba(255, 255, 255, 0.55); color: var(--text-2); }
+  tbody tr:last-child td { border-bottom: none; }
+  .file { font-weight: 500; color: var(--text); }
+  .file a { color: var(--blue); }
+  .file a:hover { text-decoration: underline; }
+  .num-cell { font-weight: 600; color: var(--text); }
+  .muted { color: var(--text-3); }
+  .pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.6); color: var(--blue); border: 1px solid var(--glass-border); }
+
+  .loading { text-align: center; padding: 70px 20px; color: var(--text-3); font-size: 14px; }
+  .error { color: #e24b4a; }
+
+  .updated { text-align: center; color: var(--text-3); font-size: 12px; padding: 8px 0 18px; }
+  footer { text-align: center; padding: 10px 20px 48px; color: var(--text-3); font-size: 12px; }
+  footer a { color: var(--text-2); }
+  footer a:hover { color: var(--blue); }
+
+  .stat.dragging, .project.dragging {
+    cursor: grabbing;
+    box-shadow: 0 36px 80px rgba(30, 60, 110, 0.34);
+    z-index: 30;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .ripple-dot, .ripple-ring {
+    position: fixed; border-radius: 50%; pointer-events: none;
+    transform: translate(-50%, -50%); z-index: 9999;
+  }
+  .ripple-dot {
+    width: 16px; height: 16px; background: rgba(46,107,255,.4);
+    animation: rippleDot .45s ease-out forwards;
+  }
+  .ripple-ring {
+    width: 28px; height: 28px; border: 2px solid rgba(46,107,255,.55);
+    animation: rippleRing .7s ease-out forwards;
+  }
+  @keyframes rippleDot {
+    from { opacity: .7; transform: translate(-50%,-50%) scale(1); }
+    to { opacity: 0; transform: translate(-50%,-50%) scale(.4); }
+  }
+  @keyframes rippleRing {
+    from { opacity: .85; transform: translate(-50%,-50%) scale(.3); }
+    to { opacity: 0; transform: translate(-50%,-50%) scale(7); }
+  }
+
+  /* 碧蓝档案风：半透明三角形爆裂 */
+  .tri {
+    position: fixed; width: 16px; height: 16px; pointer-events: none; z-index: 9998;
+    transform: translate(-50%, -50%) rotate(0deg) scale(.25);
+    animation: triBurst .62s cubic-bezier(.2, .7, .3, 1) forwards;
+    filter: drop-shadow(0 1px 2px rgba(30,60,110,.25));
+  }
+  @keyframes triBurst {
+    0%   { opacity: .9; transform: translate(-50%, -50%) rotate(0deg) scale(.25); }
+    100% { opacity: 0;  transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(var(--rot)) scale(var(--sc)); }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>数据后台</div>
+    <a class="back" href="index.html">← 返回主页</a>
+  </div>
+
+  <div class="overview">
+    <div class="stat"><div class="num" id="totalDl">—</div><div class="label">总下载次数</div></div>
+    <div class="stat teal"><div class="num" id="totalProj">—</div><div class="label">项目数</div></div>
+    <div class="stat"><div class="num" id="totalStars">—</div><div class="label">星标总数</div></div>
+  </div>
+
+  <div id="projects">
+    <div class="loading">正在从 GitHub 拉取数据…</div>
+  </div>
+
+  <div class="updated" id="updated"></div>
+
+  <footer>数据来源：GitHub 官方统计 · 页面自动加载最新数据</footer>
+</div>
+
+<script>
+  var REPOS = [
+    { name: 'PWstudy', repo: 'AI-Learning-Plan-APP-PWstudy', color: 'blue' },
+    { name: 'AWword', repo: 'Study-word-APP-AWword', color: 'teal' }
+  ];
+
+  function fmtBytes(b) {
+    if (b == null) return '—';
+    if (b < 1024) return b + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1024 / 1024).toFixed(1) + ' MB';
+  }
+  function fmtDate(s) {
+    if (!s) return '—';
+    var d = new Date(s);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  }); }
+
+  async function fetchRepo(repo) {
+    var r = await fetch('https://api.github.com/repos/Arona-ovo/' + repo + '/releases?per_page=20');
+    if (!r.ok) throw new Error('releases ' + r.status);
+    var releases = await r.json();
+    var ri = await fetch('https://api.github.com/repos/Arona-ovo/' + repo);
+    var info = ri.ok ? await ri.json() : {};
+    return { releases: releases, stars: info.stargazers_count || 0, desc: info.description || '' };
+  }
+
+  async function load() {
+    try {
+      var all = await Promise.all(REPOS.map(function (p) {
+        return fetchRepo(p.repo).then(function (d) { return { meta: p, data: d }; });
+      }));
+
+      var totalDl = 0, totalStars = 0;
+      var html = '';
+
+      all.forEach(function (item, idx) {
+        var p = item.meta, d = item.data;
+        totalStars += d.stars;
+        var projDl = 0;
+        var rows = '';
+
+        d.releases.forEach(function (rel) {
+          (rel.assets || []).forEach(function (a) {
+            projDl += a.download_count || 0;
+            totalDl += a.download_count || 0;
+            rows += '<tr>'
+              + '<td class="file"><a href="' + esc(a.browser_download_url) + '" target="_blank" rel="noopener">' + esc(a.name) + '</a>'
+              + ' <span class="pill">' + esc(rel.tag_name) + '</span></td>'
+              + '<td class="muted">' + fmtBytes(a.size) + '</td>'
+              + '<td class="num-cell">' + (a.download_count || 0) + '</td>'
+              + '<td class="muted">' + fmtDate(a.created_at) + '</td>'
+              + '</tr>';
+          });
+        });
+
+        if (!rows) rows = '<tr><td colspan="4" class="muted">暂无安装包</td></tr>';
+
+        var cls = p.color === 'teal' ? ' project aw' : '';
+        html += '<div class="project' + cls + '" style="animation-delay:' + (0.12 + idx * 0.08) + 's">'
+          + '<div class="project-head"><div><h2>' + esc(p.name) + '</h2>'
+          + '<div class="meta">' + esc(d.desc || '') + '</div></div>'
+          + '<div class="total">累计下载 ' + projDl + ' 次</div></div>'
+          + '<table><thead><tr><th>文件</th><th>大小</th><th>下载</th><th>上传时间</th></tr></thead>'
+          + '<tbody>' + rows + '</tbody></table>'
+          + '</div>';
+      });
+
+      document.getElementById('projects').innerHTML = html;
+      document.getElementById('totalDl').textContent = totalDl;
+      document.getElementById('totalProj').textContent = REPOS.length;
+      document.getElementById('totalStars').textContent = totalStars;
+      document.getElementById('updated').textContent = '最近更新：' + new Date().toLocaleString('zh-CN');
+    } catch (e) {
+      document.getElementById('projects').innerHTML =
+        '<div class="loading error">拉取数据失败：' + esc(e.message) + '。可能是 GitHub API 临时限流，稍后刷新重试。</div>';
+    }
+  }
+
+  load();
+
+  /* ===== 以下为与首页一致的动效 ===== */
+
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  document.addEventListener('pointerdown', function (e) {
+    var x = e.clientX, y = e.clientY;
+    var dot = document.createElement('span');
+    dot.className = 'ripple-dot';
+    dot.style.left = x + 'px'; dot.style.top = y + 'px';
+    var ring = document.createElement('span');
+    ring.className = 'ripple-ring';
+    ring.style.left = x + 'px'; ring.style.top = y + 'px';
+    document.body.appendChild(dot);
+    document.body.appendChild(ring);
+    setTimeout(function () { dot.remove(); ring.remove(); }, 720);
+
+    // 碧蓝档案风：半透明三角形向外爆裂
+    var colors = ['rgba(46,107,255,.34)', 'rgba(29,158,117,.32)', 'rgba(46,107,255,.22)'];
+    var count = 7;
+    for (var i = 0; i < count; i++) {
+      var tri = document.createElement('div');
+      tri.className = 'tri';
+      var size = 12 + Math.random() * 16;
+      tri.style.left = x + 'px'; tri.style.top = y + 'px';
+      tri.style.width = size + 'px'; tri.style.height = size + 'px';
+      var ang = (Math.PI * 2) * (i / count) + (Math.random() - .5) * .7;
+      var dist = 46 + Math.random() * 80;
+      var tx = Math.cos(ang) * dist, ty = Math.sin(ang) * dist;
+      var rot = (Math.random() * 540 - 270);
+      var sc = (0.7 + Math.random() * 0.9).toFixed(2);
+      tri.style.setProperty('--tx', tx.toFixed(1) + 'px');
+      tri.style.setProperty('--ty', ty.toFixed(1) + 'px');
+      tri.style.setProperty('--rot', rot.toFixed(1) + 'deg');
+      tri.style.setProperty('--sc', sc);
+      var outline = (i % 3 === 0);
+      var col = colors[i % colors.length];
+      var svg = document.createElementNS(SVGNS, 'svg');
+      svg.setAttribute('viewBox', '0 0 20 20');
+      svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%');
+      var poly = document.createElementNS(SVGNS, 'polygon');
+      poly.setAttribute('points', '10,2 18,17 2,17');
+      if (outline) {
+        poly.setAttribute('fill', 'none');
+        poly.setAttribute('stroke', col.replace(/\.\d+\)/, '.6)'));
+        poly.setAttribute('stroke-width', '2');
+        poly.setAttribute('stroke-linejoin', 'round');
+      } else {
+        poly.setAttribute('fill', col);
+      }
+      svg.appendChild(poly);
+      tri.appendChild(svg);
+      document.body.appendChild(tri);
+      setTimeout(function (t) { return function () { t.remove(); }; }(tri), 680);
+    }
+  });
+
+  var bgEl = document.querySelector('.bg');
+  var ticking = false;
+  function updateBg() {
+    var y = window.scrollY || window.pageYOffset || 0;
+    bgEl.style.transform = 'translate3d(0, ' + (y * -0.05) + 'px, 0)';
+    ticking = false;
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { window.requestAnimationFrame(updateBg); ticking = true; }
+  }, { passive: true });
+
+  var cards = document.querySelectorAll('.stat, .project');
+  cards.forEach(function (card) {
+    var startX = 0, startY = 0, active = false, moved = false;
+    var lastX = 0, lastY = 0, lastT = 0, vx = 0, vy = 0;
+    var returnTimer = null;
+    card.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('a, button')) return;
+      if (returnTimer) { clearTimeout(returnTimer); returnTimer = null; card.style.transition = 'none'; }
+      startX = e.clientX; startY = e.clientY;
+      lastX = e.clientX; lastY = e.clientY; lastT = performance.now();
+      vx = vy = 0;
+      active = true; moved = false;
+      card.classList.remove('thrown');
+      card.style.transition = 'none';
+      try { card.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    card.addEventListener('pointermove', function (e) {
+      if (!active) return;
+      var dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!moved && Math.abs(dx) + Math.abs(dy) > 5) {
+        moved = true;
+        card.classList.add('dragging');
+      }
+      if (moved) {
+        var now = performance.now(), dt = now - lastT;
+        if (dt > 0) { vx = (e.clientX - lastX) / dt; vy = (e.clientY - lastY) / dt; }
+        lastX = e.clientX; lastY = e.clientY; lastT = now;
+        var rot = dx * 0.14;
+        var sc = 1 + Math.min(Math.abs(dx) + Math.abs(dy), 160) / 900;
+        card.style.transform = 'translate(' + dx + 'px,' + dy + 'px) rotate(' + rot + 'deg) scale(' + sc.toFixed(3) + ')';
+      }
+    });
+    function release() {
+      if (!active) return;
+      active = false;
+      if (!moved) { card.style.transition = ''; return; }
+      card.classList.remove('dragging');
+      returnTimer = setTimeout(function () {
+        card.style.transition = 'transform .85s cubic-bezier(.34, 1.2, .5, 1)';
+        card.style.transform = 'translate(0,0) rotate(0deg) scale(1)';
+        setTimeout(function () {
+          card.style.transition = '';
+          card.style.transform = '';
+          returnTimer = null;
+        }, 900);
+      }, 1000);
+    }
+    card.addEventListener('pointerup', release);
+    card.addEventListener('pointercancel', release);
+  });
+</script>
+</body>
+</html>

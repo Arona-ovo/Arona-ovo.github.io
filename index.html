@@ -229,8 +229,7 @@
 <div class="hero">
   <div class="inner wrap">
     <div class="site-logo" id="siteLogo">
-      <img src="https://github.com/Arona-ovo.png" alt="Arona"
-           onerror="if(this.src.indexOf('avatar.jpg')<0){this.src='assets/avatar.jpg';}else{this.parentNode.classList.add('no-img');}">
+      <img id="siteAvatar" src="https://avatars.githubusercontent.com/u/133783669?v=4" alt="Arona">
       <span class="logo-fallback">A</span>
     </div>
     <h1>Arona 的项目分享库</h1>
@@ -367,6 +366,24 @@
       document.body.removeChild(t); done();
     }
   }
+
+  // 头像：远程优先（自动同步），加载失败或超时则切本地兜底
+  (function () {
+    var av = document.getElementById('siteAvatar');
+    if (!av) return;
+    var local = 'assets/avatar.jpg';
+    function toLocal() {
+      if (av.src.indexOf('avatar.jpg') >= 0) return;
+      av.src = local;
+    }
+    av.addEventListener('error', function () {
+      if (av.src.indexOf('avatar.jpg') >= 0) { av.parentNode.classList.add('no-img'); }
+      else { toLocal(); }
+    });
+    setTimeout(function () {
+      if (!av.complete || av.naturalWidth === 0) toLocal();
+    }, 2500);
+  })();
 
   var SVGNS = 'http://www.w3.org/2000/svg';
   document.addEventListener('pointerdown', function (e) {
